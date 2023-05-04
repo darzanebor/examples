@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 import asyncio
-from asyncio import coroutine
+
 from aiobotocore.session import get_session
 from aiobotocore.config import AioConfig
+
 from os import environ as env
 from aiohttp import web
 
 app = web.Application()
+
 
 async def sqs_process_messages():
     """init SQS client"""
@@ -38,15 +40,21 @@ async def sqs_process_messages():
                         )
                 else:
                     print("No messages in queue")
-                await asyncio.sleep(100)
-            except KeyboardInterrupt:
-                break
+                await asyncio.sleep(10)
+            except Exception as e:
+                print(e)
 
-# ... adding some routes
+
+async def main():
+    await asyncio.gather(
+        sqs_process_messages(),
+        web._run_app(
+            app,
+            host=env.get("IOSHI_LISTEN_HOST", "0.0.0.0"),
+            port=int(env.get("IOSHI_LISTEN_PORT", "5000")),
+        ),
+    )
+
 
 if __name__ == "__main__":
-    web.run_app(
-      app,
-      host=env.get("IOSHI_LISTEN_HOST", "0.0.0.0"),
-      port=int(env.get("IOSHI_LISTEN_PORT", "5000")),
-    )
+    asyncio.run(main())
